@@ -102,7 +102,7 @@ public class Screenshot : MonoBehaviour {
     public void UploadToInAppBrowser(string base64Image, int id)
     {
         
-        BrowserOpener browserOpener = GameObject.Find("InAppBrowserBridge").GetComponent<BrowserOpener>();
+        MyBrowserOpener browserOpener = GameObject.Find("InAppBrowserBridge").GetComponent<MyBrowserOpener>();
 
         javaScriptString = "window.addImage(\"data:image/png;base64," + base64Image + "\" , " + id + ")";
         browserOpener.OpenBrowser();   
