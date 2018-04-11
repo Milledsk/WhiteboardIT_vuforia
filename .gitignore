@@ -1,0 +1,72 @@
+
+=====================DOC========================
+*.log
+*.aux
+*.gz
+*.out
+doc/**/*.pdf
+
+# ====================LATEX=====================
+
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+doc/paperlist/*.html
+
+# ====================UNITY=====================
+
+*.pfx
+*.pfx.meta
+**/OpenCVForUnity/
+**/Plugins/*
+**/QCAR/*
+**/SamplesResources/
+**/SamplesResources.meta
+**/SamplesScenes/
+**/SamplesScenes.meta
+**/VuforiaConfiguration.asset
+
+# Unity generated
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Bb]uild/
+**/[Ll]ibrary/
+sysinfo.txt
+*.stackdump
+ 
+# visual studio
+[Ee]xported[Oo]bj/
+.vs/
+**/*.userprefs
+**/*.csproj
+**/*.pidb
+**/*.suo
+**/*.sln*
+**/*.user
+**/*.unityproj
+**/*.booproj
+**/.idea*/
+ 
+# OS generated
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Tt]humbs.db.meta
+[Dd]esktop.ini
+
+
+# Open CV
+**/OpenCVForUnity/
+
+#InAppBrowser
+**/InAppBrowser/
+
+# Vuforia
+**/Vuforia/
+
+#android
+**/*.apk
