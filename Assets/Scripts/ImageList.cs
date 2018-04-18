@@ -36,7 +36,7 @@ public class ImageList {
                 //get text
                 string result = www.downloadHandler.text;
 
-                Debug.Log("website text: " + result);
+                //Debug.Log("website text: " + result);
 
                 //Get <div id=\"sharedCanvas\" substring
                 int startIndex = result.IndexOf("<ul id=\"sharedCanvas\"");
@@ -64,24 +64,30 @@ public class ImageList {
 
         foreach (XmlElement node in xmlDoc.SelectNodes("ul"))
         {
-            //Debug.Log("Parent node found: " + node.InnerXml);
-            foreach (XmlElement imgNode in node)
+            Debug.Log("Parent node found: " + node.OuterXml);
+
+            foreach (XmlElement li in node)
             {
-                //Debug.Log("Node found: " + imgNode.InnerXml);
-                string tempString = imgNode.InnerXml;
+                Debug.Log("Li node found: " + li.OuterXml);
 
-                int startIndex = tempString.IndexOf("64") + 3;
-       
-                int first = tempString.IndexOf("\"");
-                int second = tempString.IndexOf("\"", first+1);
+                foreach (XmlElement imgNode in li)
+                {
+                    Debug.Log("imgNode found: " + imgNode.OuterXml);
+                    string tempString = imgNode.OuterXml;
+                    //Debug.Log("image node string: " + tempString);
+                    int startIndex = tempString.IndexOf("64") + 3;
 
-                //Debug.Log(startIndex);
+                    int first = tempString.IndexOf("\"");
+                    int second = tempString.IndexOf("\"", first + 1);
 
+                    //Debug.Log("Start index: " + startIndex);
+                    //Debug.Log("Second index: " + second);
 
-                string base64Substring = tempString.Substring(startIndex, second - startIndex);
+                    string base64Substring = tempString.Substring(startIndex, second - startIndex);
 
-                //add image to list
-                images.Add(base64Substring);
+                    //add image to list
+                    images.Add(base64Substring);
+                }
             }
 
         }

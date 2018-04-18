@@ -6,12 +6,14 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 using System.Runtime.Serialization.Formatters.Binary;
 using System;
+using OpenCVForUnity;
 
 public class Screenshot : MonoBehaviour {
     int screenshotCount = 0;
     public GameObject screenshotPreview;
     public GameObject hideGameObject;
     public GameObject wait;
+    public GameObject imagePreview;
 
     private string javaScriptString; 
 
@@ -27,8 +29,9 @@ public class Screenshot : MonoBehaviour {
         featureMatcher = new FeatureMatcher();
         imageList = new ImageList();
 
+        
         ui = GameObject.Find("UIScripts").GetComponent<UIMethods>();
-
+        ui.Hide(GameObject.Find("Panel"));
         InAppBrowserBridge bridge = GameObject.Find("InAppBrowserBridge").GetComponent<InAppBrowserBridge>();
         bridge.onJSCallback.AddListener(OnMessageFromJS);
     }
@@ -50,14 +53,14 @@ public class Screenshot : MonoBehaviour {
 
         // Take the screenshot
         screenshotTexture = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
-        screenshotTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
+        screenshotTexture.ReadPixels(new UnityEngine.Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
         screenshotTexture.Apply();
 
         //Show canvas
         ui.Show(hideGameObject);
 
         // Create a sprite
-        Sprite screenshotSprite = Sprite.Create(screenshotTexture, new Rect(0, 0, Screen.width, Screen.height), new Vector2(0.5f, 0.5f));
+        Sprite screenshotSprite = Sprite.Create(screenshotTexture, new UnityEngine.Rect(0, 0, Screen.width, Screen.height), new Vector2(0.5f, 0.5f));
 
         // Set the sprite to the screenshotPreview
         screenshotPreview.GetComponent<Image>().sprite = screenshotSprite;
@@ -124,15 +127,11 @@ public class Screenshot : MonoBehaviour {
         return result;
     }
 
-    public void MatchAndPost()
-    {
-        StartCoroutine(MatchFeatures());
-    }
 
-    //Match features from canvas
-    public IEnumerator MatchFeatures()
+    //Match features from canvas, wrap image if match and post to inAppBrowser
+    public IEnumerator MatchWarpAndPost()
     {
-        ImageString image;
+        ImageObject image;
         GameObject instantiatedWait = Instantiate(wait, screenshotPreview.transform);
 
         //Pick the pixels inside the square
@@ -145,17 +144,106 @@ public class Screenshot : MonoBehaviour {
         //Don't match features if no images is on the canvas
         if (imageList.getImageList().Count == 0)
         {
-            image = new ImageString(Convert.ToBase64String(imagePart), -1);
+            image = new ImageObject(Convert.ToBase64String(imagePart), -1);
         }
         // Match feature from images on canvas. 
         else
         {
-             image = featureMatcher.MatchFeatures(Convert.ToBase64String(imagePart), imageList.getImageList());
+             image = featureMatcher.MatchAndWarp(Convert.ToBase64String(imagePart), imageList.getImageList());
         }
         Destroy(instantiatedWait);
-        UploadToInAppBrowser(image.getImageString(), image.getWinnerIndex());
-        
+
+        //Upload to inAppBrowser
+        MyBrowserOpener browserOpener = GameObject.Find("InAppBrowserBridge").GetComponent<MyBrowserOpener>();
+
+        javaScriptString = "window.addImage(\"data:image/png;base64," + image.image + "\" , " + image.index + ")";
+        browserOpener.OpenBrowser();
     }
+
+    //Match features from canvas, wrap image if match and post to inAppBrowser
+    public IEnumerator MatchAndOpenControls()
+    {
+        int index;
+        GameObject instantiatedWait = Instantiate(wait, screenshotPreview.transform);
+
+        //Pick the pixels inside the square
+        ImagePartToByteArray();
+
+        //Get imageList
+        yield return imageList.GetTextFromURL();
+        Debug.Log("Image list count: " + imageList.getImageList().Count);
+
+        //Don't match features if no images is on the canvas
+        if (imageList.getImageList().Count == 0)
+        {
+            index = -1; 
+        }
+        // Match feature from images on canvas. 
+        else
+        {
+            index = featureMatcher.FindBestMatchIndex(Convert.ToBase64String(imagePart), imageList.getImageList());
+        }
+        Destroy(instantiatedWait);
+
+        if(index == -1)
+        {
+            Debug.Log("No match");
+            yield break; 
+        }
+
+        //Upload to inAppBrowser
+        MyBrowserOpener browserOpener = GameObject.Find("InAppBrowserBridge").GetComponent<MyBrowserOpener>();
+
+        javaScriptString = "window.selectImage("+ index + ")";
+        browserOpener.OpenBrowser();
+    }
+
+    //Match features from canvas and show image om screen (download image)
+    public IEnumerator MatchAndDownload()
+    {
+        
+        ImageObject image;
+        GameObject instantiatedWait = Instantiate(wait, screenshotPreview.transform);
+
+        //Pick the pixels inside the square
+        ImagePartToByteArray();
+
+        //Get imageList
+        yield return imageList.GetTextFromURL();
+        Debug.Log("Image list count: " + imageList.getImageList().Count);
+
+        //Don't match features if no images is on the canvas
+        if (imageList.getImageList().Count == 0)
+        {
+            image = new ImageObject(Convert.ToBase64String(imagePart), -1);
+        }
+        // Match feature from images on canvas. 
+        else
+        {
+            image = featureMatcher.DownloadImage(Convert.ToBase64String(imagePart), imageList.getImageList());
+            Debug.Log("Features tracking done");
+        }
+        Destroy(instantiatedWait);
+        if (image.index == -1)
+        {
+            Debug.Log("No match");
+            yield break;
+        }
+
+
+        
+        ui.Show(GameObject.Find("Panel"));
+        
+        Texture2D winnerImageTexture = new Texture2D(image.imageMat.cols(), image.imageMat.rows(), TextureFormat.RGB24, false);
+        Debug.Log("texture: " + winnerImageTexture);
+        Utils.matToTexture2D(image.imageMat, winnerImageTexture);
+
+        imagePreview.GetComponent<RectTransform>().sizeDelta = new Vector2(winnerImageTexture.width, winnerImageTexture.height);
+
+        // Set the sprite to the imagePreview
+        imagePreview.GetComponent<RawImage>().texture = winnerImageTexture;
+    }
+
 
     //Listener : check if webstrate page is loaded
     void OnMessageFromJS(string jsMessage)

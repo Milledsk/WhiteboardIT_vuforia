@@ -7,12 +7,15 @@ public class ButtonController : MonoBehaviour {
 
     Screenshot screenshot;
 
-    UIMethods uiMethods; 
+    UIMethods uiMethods;
+
+    MyBrowserOpener browserOpener;
 
 	// Use this for initialization
 	void Start () {
         screenshot = FindObjectOfType<Screenshot>();        
         uiMethods = FindObjectOfType<UIMethods>();
+        browserOpener = FindObjectOfType<MyBrowserOpener>();
     }
 
     public void OnPhotoButtonPressed()
@@ -22,17 +25,35 @@ public class ButtonController : MonoBehaviour {
 
     public void OnCloseButtonPressed()
     {
+        uiMethods.Hide(GameObject.Find("Panel"));
         uiMethods.Hide(GameObject.Find("ImageObject"));
+  
     }
 
     public void OnMatchImageButtonPressed()
     {
-        screenshot.MatchAndPost();
+        StartCoroutine(screenshot.MatchWarpAndPost());
     }
+
+    public void OnSelectImageButtonPressed()
+    {
+        StartCoroutine(screenshot.MatchAndOpenControls());
+    }
+
+    public void OnDownloadImageButtonPressed()
+    {
+        StartCoroutine(screenshot.MatchAndDownload());
+    }
+
 
     public void OnButtonBackPressed()
     {
         SceneManager.LoadScene("StartWithQR");
+    }
+
+    public void OnButtonOpenControlPressed()
+    {
+        browserOpener.OpenBrowser();
     }
 
 
