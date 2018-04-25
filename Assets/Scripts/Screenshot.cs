@@ -230,8 +230,6 @@ public class Screenshot : MonoBehaviour {
             yield break;
         }
 
-
-        
         ui.Show(GameObject.Find("Panel"));
         
         Texture2D winnerImageTexture = new Texture2D(image.imageMat.cols(), image.imageMat.rows(), TextureFormat.RGB24, false);

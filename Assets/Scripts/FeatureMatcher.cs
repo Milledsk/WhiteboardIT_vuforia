@@ -12,6 +12,7 @@ public class FeatureMatcher {
     private List<Texture2D> photos;
     private int winnerThreshold = 10;
 
+
     public List<ImageObject> MatchFeatures(string base64image, List<string> base64imageList)
     {
         ImageObject myImage = new ImageObject();
@@ -127,7 +128,6 @@ public class FeatureMatcher {
 
     }
 
-    
     public ImageObject warpImage(List<ImageObject> imageList)
     {
         Texture2D imgTexture = base64ImageToTexture(imageList[0].image);
@@ -152,14 +152,23 @@ public class FeatureMatcher {
         //Calculate the homography of the best matching image
         //Mat homography = Calib3d.findHomography(queryPoints, matchPoints, Calib3d.RANSAC, 5.0);
         Mat homography = Calib3d.findHomography(queryPoints, matchPoints, Calib3d.RANSAC, 3.0);
-        Mat resultImg = new Mat();
-        Imgproc.warpPerspective(imageList[0].imageMat, resultImg, homography, imageList[1].imageMat.size());
+        Mat tempResultImg = new Mat();
+        Imgproc.warpPerspective(imageList[0].imageMat, tempResultImg, homography, imageList[1].imageMat.size());
+
+        //Show (red) annotations only
+        ImageProcessor imageProcessor = new ImageProcessor();
+        Mat resultImg = imageProcessor.ShowAnnotationsOnly(tempResultImg);
 
         //Show image
-        Texture2D texture = new Texture2D(imageList[1].imageMat.cols(), imageList[1].imageMat.rows(), TextureFormat.RGBA32, false);
-        Utils.matToTexture2D(resultImg, texture);
+        Texture2D tempTexture = new Texture2D(imageList[1].imageMat.cols(), imageList[1].imageMat.rows(), TextureFormat.RGBA32, false);
+        Utils.matToTexture2D(resultImg, tempTexture);
 
+        
+        //Make black pixels transparent
+        Texture2D texture = imageProcessor.removeColor(Color.black, tempTexture);
         return new ImageObject(Convert.ToBase64String(texture.EncodeToPNG()), imageList[1].index);
+
+        //return new ImageObject(Convert.ToBase64String(tempTexture.EncodeToPNG()), imageList[1].index);
     }
     
     public int FindBestMatchIndex(string base64image, List<string> base64imageList)
