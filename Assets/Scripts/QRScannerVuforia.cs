@@ -18,7 +18,9 @@ public class QRScannerVuforia : MonoBehaviour
     private Vuforia.Image.PIXEL_FORMAT mPixelFormat = Vuforia.Image.PIXEL_FORMAT.UNKNOWN_FORMAT;
     private Vuforia.Image image;
     private Result result;
-    private int i = 0; 
+    private int i = 0;
+    UIMethods uiMethods;
+
 
     bool QRVisible = false;
 
@@ -29,8 +31,12 @@ public class QRScannerVuforia : MonoBehaviour
         Debug.Log("Start bliver kaldt igen");
         barCodeReader = new BarcodeReader();
 
-        StartCoroutine(InitializeCamera());
+        uiMethods = FindObjectOfType<UIMethods>();
+        uiMethods.Hide(GameObject.Find("Canvas full"));
+        uiMethods.Show(GameObject.Find("Canvas Start"));
 
+
+        StartCoroutine(InitializeCamera());
     }
 
     private IEnumerator InitializeCamera()
@@ -49,56 +55,63 @@ public class QRScannerVuforia : MonoBehaviour
             cameraInitialized = true;
             Debug.Log("Initilaze camera with format: " + mPixelFormat);
         }
+        StartCoroutine(ReadQRCode());
 
     }
 
-    void Update()
-    {
-        
-        if (cameraInitialized)
+    public IEnumerator ReadQRCode()
+    { 
+        while (true)
         {
-            i++;
-            image = CameraDevice.Instance.GetCameraImage(mPixelFormat);
-            
-            if (image == null)
+            if (cameraInitialized)
             {
-                Debug.Log("No camera image found");
-                return; 
+                image = CameraDevice.Instance.GetCameraImage(mPixelFormat);
+
+                if (image == null)
+                {
+                    Debug.Log("No camera image found");
+                } else
+                {
+                    result = barCodeReader.Decode(image.Pixels, image.BufferWidth, image.BufferHeight, RGBLuminanceSource.BitmapFormat.RGB24);
+
+                    image = null;
+
+                    if (result != null)
+                    {
+                        // QRCode detected.
+                        QRVisible = true;
+
+                        Debug.Log(i + " QR code: " + result.Text);
+                        //Do something with the QR code. 
+
+                        GameObject instantiatedSucces = Instantiate(succes, GameObject.Find("Canvas Start").transform);
+
+                        Manager.Instance.controllerUrl = result.Text;
+                        Debug.Log("Manager's controllerUrl set: " + Manager.Instance.controllerUrl);
+
+                        int firstIndex = 0;
+                        int secondIndex = result.Text.IndexOf("can");
+                        int thirdIndex = result.Text.IndexOf("=") + 1;
+                        string canvasUrl = result.Text.Substring(firstIndex, secondIndex) + result.Text.Substring(thirdIndex);
+
+                        Manager.Instance.canvasUrl = canvasUrl + "?raw";
+                        Debug.Log("Manager's variable set: " + Manager.Instance.canvasUrl);
+                        result = null;  // clear data
+                        yield return new WaitForSeconds(1);
+                        Destroy(instantiatedSucces);
+
+                        uiMethods.Show(GameObject.Find("Canvas full"));
+                        uiMethods.Hide(GameObject.Find("Canvas Start"));
+
+                        yield break;
+                    }
+                }
             }
 
-            result = barCodeReader.Decode(image.Pixels, image.BufferWidth, image.BufferHeight, RGBLuminanceSource.BitmapFormat.RGB24);
-
-            image = null; 
-
-            if (result != null)
-            {
-                // QRCode detected.
-                QRVisible = true;
-
-                Debug.Log(i + " QR code: " + result.Text);
-                //Do something with the QR code. 
-
-                GameObject instantiatedSucces = Instantiate(succes, GameObject.Find("Canvas").transform);
-
-                Manager.Instance.controllerUrl = result.Text;
-                int firstIndex = 0;
-                int secondIndex = result.Text.IndexOf("can");
-                int thirdIndex = result.Text.IndexOf("=") + 1;
-
-                string canvasUrl = result.Text.Substring(firstIndex, secondIndex) + result.Text.Substring(thirdIndex);
-                Debug.Log(i + " Canvas string: " + canvasUrl);
-                Manager.Instance.canvasUrl = canvasUrl + "?raw";
-                result = null;  // clear data
-                //yield return new WaitForSeconds(2);
-                Destroy(instantiatedSucces);
-                cameraInitialized = false;
-                SceneManager.LoadScene("SnapshotMedFeatureMatcher");
-                
-            }
-            //Debug.Log(i + " No QR code found");
+            yield return new WaitForSeconds(0.5f);
         }
-
     }
+
     /*
     /// Called when app is paused / resumed
     void OnPause(bool paused)

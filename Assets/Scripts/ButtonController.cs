@@ -48,7 +48,9 @@ public class ButtonController : MonoBehaviour {
 
     public void OnButtonBackPressed()
     {
-        SceneManager.LoadScene("StartWithQR");
+        uiMethods.Hide(GameObject.Find("Canvas full"));
+        uiMethods.Show(GameObject.Find("Canvas Start"));
+        StartCoroutine(FindObjectOfType<QRScannerVuforia>().ReadQRCode());
     }
 
     public void OnButtonOpenControlPressed()

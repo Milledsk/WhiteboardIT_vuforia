@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/StartWithQR.unity
     guid: a387f3e980931bb41b2ab12f704e2994
   - enabled: 1
